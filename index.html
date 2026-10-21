@@ -3,38 +3,474 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>App de Postulaciones</title>
-    <meta
-      name="description"
-      content="Aplicación para gestionar postulaciones laborales con seguimiento de estado."
-    />
-    <link rel="stylesheet" href="styles.css" />
+    <title>JobTracker</title>
+    <style>
+      :root {
+        --bg: #faf7f7;
+        --panel: #ffffff;
+        --panel-soft: #fffafb;
+        --border: #f3e8e8;
+        --primary: #f472b6;
+        --primary-dark: #ec4899;
+        --primary-soft: #fdf2f8;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --shadow: 0 12px 28px rgba(31, 41, 55, 0.06);
+        --blue-soft: #e0f2fe;
+        --blue-text: #0284c7;
+        --pink-soft: #fce7f3;
+        --pink-text: #be185d;
+        --green-soft: #dcfce7;
+        --green-text: #16a34a;
+        --gray-soft: #f1f5f9;
+        --gray-text: #64748b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 16px;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .app {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        width: 260px;
+        min-height: 100vh;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+        padding: 28px 18px;
+        box-shadow: inset -1px 0 0 rgba(244, 114, 182, 0.05);
+      }
+
+      .brand {
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--text);
+        margin-bottom: 28px;
+        padding-left: 8px;
+      }
+
+      .nav {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .nav-item {
+        width: 100%;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text);
+        border-radius: 14px;
+        padding: 14px 16px;
+        text-align: left;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .nav-item:hover {
+        background: var(--primary-soft);
+        border-color: rgba(244, 114, 182, 0.2);
+      }
+
+      .nav-item.active {
+        background: var(--primary-soft);
+        border-color: rgba(244, 114, 182, 0.25);
+        color: var(--primary-dark);
+        box-shadow: 0 6px 18px rgba(244, 114, 182, 0.12);
+      }
+
+      .content {
+        flex: 1;
+        padding: 32px 28px 40px;
+      }
+
+      .view {
+        width: 100%;
+      }
+
+      .list-view {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+      }
+
+      .metric-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 18px 16px;
+      }
+
+      .metric-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        margin-top: 10px;
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        color: var(--text);
+      }
+
+      .empty-state {
+        background: var(--panel);
+        border: 1px dashed var(--border);
+        border-radius: 18px;
+        padding: 26px 18px;
+        text-align: center;
+        color: var(--muted);
+        box-shadow: var(--shadow);
+      }
+
+      .applications-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .application-card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+      }
+
+      .card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .card-title-group {
+        flex: 1;
+      }
+
+      .company-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .role-name {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .status-badge[data-status="Enviado"] {
+        background: var(--blue-soft);
+        color: var(--blue-text);
+      }
+
+      .status-badge[data-status="En proceso"] {
+        background: var(--pink-soft);
+        color: var(--pink-text);
+      }
+
+      .status-badge[data-status="Oferta"] {
+        background: var(--green-soft);
+        color: var(--green-text);
+      }
+
+      .status-badge[data-status="Rechazado"] {
+        background: var(--gray-soft);
+        color: var(--gray-text);
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+      }
+
+      .meta-row strong {
+        color: var(--text);
+        font-size: 0.95rem;
+      }
+
+      .notes {
+        color: var(--text);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        margin: 0 0 12px;
+      }
+
+      .card-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .delete-button {
+        border: none;
+        background: transparent;
+        color: #dc2626;
+        font-weight: 700;
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
+
+      .delete-button:hover {
+        background: #fee2e2;
+      }
+
+      .form-panel {
+        max-width: 680px;
+        margin: 0 auto;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        box-shadow: var(--shadow);
+        padding: 28px;
+      }
+
+      .form-panel h2 {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        margin-bottom: 20px;
+        color: var(--text);
+      }
+
+      #application-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--text);
+        padding: 0.85rem 0.95rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(244, 114, 182, 0.12);
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .primary-button {
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: #fff;
+        font-weight: 700;
+        padding: 0.9rem 1.3rem;
+        box-shadow: 0 10px 18px rgba(244, 114, 182, 0.22);
+      }
+
+      .primary-button:hover {
+        filter: brightness(0.98);
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          position: static;
+          width: 100%;
+          min-height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+          padding: 18px 16px;
+        }
+
+        .nav {
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        .nav-item {
+          width: auto;
+          flex: 1 1 180px;
+        }
+
+        .content {
+          padding: 20px 16px 30px;
+        }
+
+        .form-panel {
+          padding: 20px 16px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="app-shell">
-      <header class="topbar" aria-label="Encabezado principal">
-        <p class="eyebrow">Seguimiento</p>
-        <h1>Postulaciones</h1>
-      </header>
+    <div class="app">
+      <aside class="sidebar" aria-label="Navegación principal">
+        <div class="brand">JobTracker</div>
 
-      <main class="layout">
-        <section class="panel" aria-labelledby="form-title">
-          <div class="panel-header">
-            <h2 id="form-title">Nueva postulación</h2>
+        <nav class="nav" aria-label="Menú principal">
+          <button type="button" class="nav-item active" data-view="list">
+            <span aria-hidden="true">📋</span>
+            <span>Ver postulaciones</span>
+          </button>
+          <button type="button" class="nav-item" data-view="form">
+            <span aria-hidden="true">✍️</span>
+            <span>Nueva postulación</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section id="view-list" class="view list-view" aria-label="Vista de postulaciones">
+          <div class="summary" aria-label="Métricas de postulaciones">
+            <article class="metric-card">
+              <span class="metric-label">Total</span>
+              <strong id="metric-total" class="metric-value">0</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">Enviado</span>
+              <strong id="metric-enviado" class="metric-value">0</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">En proceso</span>
+              <strong id="metric-proceso" class="metric-value">0</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">Rechazado</span>
+              <strong id="metric-rechazado" class="metric-value">0</strong>
+            </article>
+
+            <article class="metric-card">
+              <span class="metric-label">Oferta</span>
+              <strong id="metric-oferta" class="metric-value">0</strong>
+            </article>
           </div>
 
-          <form id="application-form" novalidate>
-            <div class="field-group">
-              <label for="empresa">Empresa</label>
-              <input id="empresa" name="empresa" type="text" maxlength="120" required />
-            </div>
+          <div id="empty-state" class="empty-state hidden">
+            <p>No hay postulaciones registradas.</p>
+          </div>
 
-            <div class="field-group">
-              <label for="rol">Rol</label>
-              <input id="rol" name="rol" type="text" maxlength="120" required />
-            </div>
+          <ul id="applications-list" class="applications-list" aria-live="polite"></ul>
+        </section>
 
-            <div class="field-row">
+        <section id="view-form" class="view hidden" aria-label="Vista del formulario">
+          <div class="form-panel">
+            <h2>Nueva postulación</h2>
+
+            <form id="application-form" novalidate>
+              <div class="field-group">
+                <label for="empresa">Empresa</label>
+                <input id="empresa" name="empresa" type="text" maxlength="120" required />
+              </div>
+
+              <div class="field-group">
+                <label for="rol">Rol</label>
+                <input id="rol" name="rol" type="text" maxlength="120" required />
+              </div>
+
               <div class="field-group">
                 <label for="fecha">Fecha</label>
                 <input id="fecha" name="fecha" type="date" required />
@@ -50,40 +486,286 @@
                   <option value="Oferta">Oferta</option>
                 </select>
               </div>
-            </div>
 
-            <div class="field-group">
-              <label for="notas">Notas</label>
-              <textarea
-                id="notas"
-                name="notas"
-                rows="4"
-                maxlength="500"
-                placeholder="Agrega detalles o recordatorios"
-              ></textarea>
-            </div>
+              <div class="field-group">
+                <label for="notas">Notas</label>
+                <textarea
+                  id="notas"
+                  name="notas"
+                  rows="4"
+                  maxlength="500"
+                  placeholder="Agrega detalles o recordatorios"
+                ></textarea>
+              </div>
 
-            <div class="actions">
-              <button type="submit" class="primary-button">Guardar</button>
-            </div>
-          </form>
-        </section>
-
-        <section class="panel panel-list" aria-labelledby="list-title">
-          <div class="panel-header list-header">
-            <h2 id="list-title">Listado</h2>
-            <span id="counter" class="counter" aria-live="polite">0</span>
+              <div class="actions">
+                <button type="submit" class="primary-button">Guardar</button>
+              </div>
+            </form>
           </div>
-
-          <div id="empty-state" class="empty-state" hidden>
-            <p>No hay postulaciones cargadas.</p>
-          </div>
-
-          <ul id="applications-list" class="applications-list" aria-live="polite"></ul>
         </section>
       </main>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+      const STORAGE_KEY = "postulaciones-app";
+      const VALID_ESTADOS = ["Enviado", "En proceso", "Rechazado", "Oferta"];
+
+      const views = {
+        list: document.getElementById("view-list"),
+        form: document.getElementById("view-form")
+      };
+
+      const navButtons = document.querySelectorAll(".nav-item");
+      const form = document.getElementById("application-form");
+      const empresaInput = document.getElementById("empresa");
+      const rolInput = document.getElementById("rol");
+      const fechaInput = document.getElementById("fecha");
+      const estadoInput = document.getElementById("estado");
+      const notasInput = document.getElementById("notas");
+      const listElement = document.getElementById("applications-list");
+      const emptyState = document.getElementById("empty-state");
+
+      let postulaciones = loadPostulaciones();
+
+      function normalizeEstado(value) {
+        return VALID_ESTADOS.includes(value) ? value : "Enviado";
+      }
+
+      function normalizePostulacion(item) {
+        if (!item || typeof item !== "object") {
+          return null;
+        }
+
+        const empresa = typeof item.empresa === "string" ? item.empresa.trim() : "";
+        const rol = typeof item.rol === "string" ? item.rol.trim() : "";
+        const fecha = typeof item.fecha === "string" ? item.fecha : "";
+        const notas = typeof item.notas === "string" ? item.notas.trim() : "";
+        const estado = normalizeEstado(item.estado);
+
+        if (!empresa || !rol || !fecha) {
+          return null;
+        }
+
+        const id =
+          typeof item.id === "string" && item.id
+            ? item.id
+            : `post-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+        return {
+          id,
+          empresa,
+          rol,
+          fecha,
+          estado,
+          notas
+        };
+      }
+
+      function loadPostulaciones() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return [];
+          const parsed = JSON.parse(saved);
+          if (!Array.isArray(parsed)) return [];
+          return parsed.map(normalizePostulacion).filter(Boolean);
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function savePostulaciones() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(postulaciones));
+        } catch (error) {
+        }
+      }
+
+      function setView(viewName) {
+        const nextView = viewName === "form" ? "form" : "list";
+
+        Object.entries(views).forEach(([key, element]) => {
+          element.classList.toggle("hidden", key !== nextView);
+        });
+
+        navButtons.forEach((button) => {
+          const isActive = button.dataset.view === nextView;
+          button.classList.toggle("active", isActive);
+        });
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(`${dateString}T00:00:00`);
+        if (Number.isNaN(date.getTime())) {
+          return dateString;
+        }
+
+        return new Intl.DateTimeFormat("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        }).format(date);
+      }
+
+      function updateMetrics() {
+        const summary = {
+          Total: postulaciones.length,
+          Enviado: 0,
+          "En proceso": 0,
+          Rechazado: 0,
+          Oferta: 0
+        };
+
+        postulaciones.forEach((postulacion) => {
+          summary[postulacion.estado] = (summary[postulacion.estado] || 0) + 1;
+        });
+
+        document.getElementById("metric-total").textContent = String(summary.Total);
+        document.getElementById("metric-enviado").textContent = String(summary.Enviado);
+        document.getElementById("metric-proceso").textContent = String(summary["En proceso"]);
+        document.getElementById("metric-rechazado").textContent = String(summary.Rechazado);
+        document.getElementById("metric-oferta").textContent = String(summary.Oferta);
+      }
+
+      function renderList() {
+        listElement.innerHTML = "";
+
+        if (postulaciones.length === 0) {
+          emptyState.classList.remove("hidden");
+          return;
+        }
+
+        emptyState.classList.add("hidden");
+
+        postulaciones.forEach((postulacion) => {
+          const item = document.createElement("li");
+          item.className = "application-card";
+
+          const top = document.createElement("div");
+          top.className = "card-top";
+
+          const textGroup = document.createElement("div");
+          textGroup.className = "card-title-group";
+
+          const company = document.createElement("h3");
+          company.className = "company-name";
+          company.textContent = postulacion.empresa;
+
+          const role = document.createElement("p");
+          role.className = "role-name";
+          role.textContent = postulacion.rol;
+
+          textGroup.append(company, role);
+
+          const badge = document.createElement("span");
+          badge.className = "status-badge";
+          badge.dataset.status = postulacion.estado;
+          badge.textContent = postulacion.estado;
+
+          top.append(textGroup, badge);
+
+          const meta = document.createElement("div");
+          meta.className = "meta-row";
+
+          const metaLabel = document.createElement("span");
+          metaLabel.textContent = "Fecha";
+
+          const metaValue = document.createElement("strong");
+          metaValue.textContent = formatDate(postulacion.fecha);
+
+          meta.append(metaLabel, metaValue);
+
+          if (postulacion.notas) {
+            const notes = document.createElement("p");
+            notes.className = "notes";
+            notes.textContent = postulacion.notas;
+            item.append(top, meta, notes);
+          } else {
+            item.append(top, meta);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "card-actions";
+
+          const deleteButton = document.createElement("button");
+          deleteButton.type = "button";
+          deleteButton.className = "delete-button";
+          deleteButton.textContent = "Eliminar";
+          deleteButton.dataset.id = postulacion.id;
+
+          actions.appendChild(deleteButton);
+          item.appendChild(actions);
+
+          listElement.appendChild(item);
+        });
+      }
+
+      function renderApp() {
+        updateMetrics();
+        renderList();
+      }
+
+      function resetForm() {
+        form.reset();
+        empresaInput.focus();
+      }
+
+      navButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          setView(button.dataset.view);
+        });
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const empresa = empresaInput.value.trim();
+        const rol = rolInput.value.trim();
+        const fecha = fechaInput.value;
+        const estado = estadoInput.value;
+        const notas = notasInput.value.trim();
+
+        if (!empresa || !rol || !fecha || !estado) {
+          form.reportValidity();
+          return;
+        }
+
+        const nuevaPostulacion = {
+          id: `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          empresa,
+          rol,
+          fecha,
+          estado: normalizeEstado(estado),
+          notas
+        };
+
+        postulaciones = [nuevaPostulacion, ...postulaciones];
+        savePostulaciones();
+        renderApp();
+        resetForm();
+        setView("list");
+      });
+
+      listElement.addEventListener("click", (event) => {
+        const button = event.target.closest(".delete-button");
+
+        if (!button) {
+          return;
+        }
+
+        const { id } = button.dataset;
+
+        if (!id) {
+          return;
+        }
+
+        postulaciones = postulaciones.filter((postulacion) => postulacion.id !== id);
+        savePostulaciones();
+        renderApp();
+      });
+
+      setView("list");
+      renderApp();
+    </script>
   </body>
 </html>
