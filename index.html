@@ -3,48 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JobTracker</title>
+    <title>App de Postulaciones</title>
     <meta
       name="description"
-      content="Bitácora y seguimiento de postulaciones IT."
+      content="Aplicación para gestionar postulaciones laborales con seguimiento de estado."
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <p class="eyebrow">Seguimiento</p>
-          <h1>JobTracker</h1>
-          <p class="subtitle">Bitácora y seguimiento de postulaciones IT</p>
-        </div>
+      <header class="topbar" aria-label="Encabezado principal">
+        <p class="eyebrow">Seguimiento</p>
+        <h1>Postulaciones</h1>
       </header>
 
-      <section class="kpi-bar" aria-label="Resumen de postulaciones">
-        <div class="kpi-card total">
-          <span>Total</span>
-          <strong id="summary-total">0</strong>
-        </div>
-        <div class="kpi-card enviado">
-          <span>Enviado</span>
-          <strong id="summary-enviado">0</strong>
-        </div>
-        <div class="kpi-card en-proceso">
-          <span>En proceso</span>
-          <strong id="summary-en-proceso">0</strong>
-        </div>
-        <div class="kpi-card rechazado">
-          <span>Rechazado</span>
-          <strong id="summary-rechazado">0</strong>
-        </div>
-        <div class="kpi-card oferta">
-          <span>Oferta</span>
-          <strong id="summary-oferta">0</strong>
-        </div>
-      </section>
-
-      <main class="content-grid">
-        <aside class="panel form-panel" aria-labelledby="form-title">
+      <main class="layout">
+        <section class="panel" aria-labelledby="form-title">
           <div class="panel-header">
             <h2 id="form-title">Nueva postulación</h2>
           </div>
@@ -93,34 +67,12 @@
               <button type="submit" class="primary-button">Guardar</button>
             </div>
           </form>
-        </aside>
+        </section>
 
-        <section class="panel list-panel" aria-labelledby="list-title">
+        <section class="panel panel-list" aria-labelledby="list-title">
           <div class="panel-header list-header">
-            <div>
-              <h2 id="list-title">Postulaciones</h2>
-            </div>
+            <h2 id="list-title">Listado</h2>
             <span id="counter" class="counter" aria-live="polite">0</span>
-          </div>
-
-          <div class="list-toolbar">
-            <label class="search-field" aria-label="Buscar postulaciones">
-              <span class="icon">⌕</span>
-              <input
-                id="search-input"
-                type="search"
-                placeholder="Buscar por empresa o puesto"
-                autocomplete="off"
-              />
-            </label>
-
-            <div class="filter-row" aria-label="Filtrar postulaciones por estado">
-              <button class="chip is-active" type="button" data-filter="Todos">Todos</button>
-              <button class="chip" type="button" data-filter="En proceso">En proceso</button>
-              <button class="chip" type="button" data-filter="Oferta">Oferta</button>
-              <button class="chip" type="button" data-filter="Enviado">Enviado</button>
-              <button class="chip" type="button" data-filter="Rechazado">Rechazado</button>
-            </div>
           </div>
 
           <div id="empty-state" class="empty-state" hidden>
