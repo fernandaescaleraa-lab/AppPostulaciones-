@@ -287,22 +287,35 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.item-status-editor {
+.item-status-editor,
+.item-notes-editor {
   display: grid;
   gap: 0.5rem;
 }
 
-.status-label {
+.status-label,
+.notes-label {
   font-size: 0.8rem;
   color: var(--muted);
 }
 
-.status-select {
+.status-select,
+.notes-input {
   border: 1px solid var(--border);
   border-radius: 10px;
+  background: #fff;
+}
+
+.status-select {
   padding: 0.65rem 0.8rem;
   font-weight: 700;
-  background: #fff;
+}
+
+.notes-input {
+  min-height: 88px;
+  resize: vertical;
+  padding: 0.75rem 0.8rem;
+  line-height: 1.5;
 }
 
 .item-actions {
