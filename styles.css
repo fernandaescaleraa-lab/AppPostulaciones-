@@ -245,22 +245,26 @@ textarea {
   white-space: nowrap;
 }
 
-.status-Enviado {
+.status-enviado,
+.state-enviado {
   background: var(--gray-soft);
   color: var(--gray);
 }
 
-.status-En\ proceso {
+.status-en-proceso,
+.state-en-proceso {
   background: var(--warning-soft);
   color: var(--warning);
 }
 
-.status-Rechazado {
+.status-rechazado,
+.state-rechazado {
   background: var(--danger-soft);
   color: var(--danger);
 }
 
-.status-Oferta {
+.status-oferta,
+.state-oferta {
   background: var(--success-soft);
   color: var(--success);
 }
@@ -281,6 +285,24 @@ textarea {
   color: var(--text);
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.item-status-editor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.status-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.status-select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font-weight: 700;
+  background: #fff;
 }
 
 .item-actions {
