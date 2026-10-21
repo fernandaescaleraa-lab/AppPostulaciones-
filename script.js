@@ -9,8 +9,17 @@ const notasInput = document.querySelector('#notas');
 const list = document.querySelector('#applications-list');
 const emptyState = document.querySelector('#empty-state');
 const counter = document.querySelector('#counter');
+const summaryTotal = document.querySelector('#summary-total');
+const summaryEnviado = document.querySelector('#summary-enviado');
+const summaryEnProceso = document.querySelector('#summary-en-proceso');
+const summaryRechazado = document.querySelector('#summary-rechazado');
+const summaryOferta = document.querySelector('#summary-oferta');
+const searchInput = document.querySelector('#search-input');
+const filterButtons = document.querySelectorAll('.chip');
 
 let postulaciones = loadPostulaciones();
+let currentFilter = 'Todos';
+let currentSearch = '';
 
 function loadPostulaciones() {
   const savedData = localStorage.getItem(STORAGE_KEY);
@@ -44,6 +53,21 @@ function getStateClassKey(estado) {
   return estado.toLowerCase().replace(/\s+/g, '-');
 }
 
+function getStateColor(estado) {
+  switch (estado) {
+    case 'Enviado':
+      return '#475569';
+    case 'En proceso':
+      return '#a16207';
+    case 'Rechazado':
+      return '#dc2626';
+    case 'Oferta':
+      return '#15803d';
+    default:
+      return '#4f46e5';
+  }
+}
+
 function formatDate(dateString) {
   const date = new Date(`${dateString}T00:00:00`);
 
@@ -74,23 +98,71 @@ function renderStatusOptions(currentEstado) {
     .join('');
 }
 
+function renderSummary() {
+  const counts = {
+    Enviado: 0,
+    'En proceso': 0,
+    Rechazado: 0,
+    Oferta: 0,
+  };
+
+  postulaciones.forEach((postulacion) => {
+    if (counts[postulacion.estado] !== undefined) {
+      counts[postulacion.estado] += 1;
+    }
+  });
+
+  summaryTotal.textContent = String(postulaciones.length);
+  summaryEnviado.textContent = String(counts.Enviado);
+  summaryEnProceso.textContent = String(counts['En proceso']);
+  summaryRechazado.textContent = String(counts.Rechazado);
+  summaryOferta.textContent = String(counts.Oferta);
+}
+
+function getFilteredPostulaciones() {
+  const query = currentSearch.trim().toLowerCase();
+
+  return postulaciones.filter((postulacion) => {
+    const matchesFilter = currentFilter === 'Todos' || postulacion.estado === currentFilter;
+
+    if (!query) {
+      return matchesFilter;
+    }
+
+    const haystack = `${postulacion.empresa} ${postulacion.rol}`.toLowerCase();
+    return matchesFilter && haystack.includes(query);
+  });
+}
+
 function renderList() {
+  const filteredPostulaciones = getFilteredPostulaciones();
   list.innerHTML = '';
 
   if (postulaciones.length === 0) {
     emptyState.hidden = false;
+    emptyState.innerHTML = '<p>No hay postulaciones cargadas.</p>';
+    counter.textContent = '0';
+    return;
+  }
+
+  if (filteredPostulaciones.length === 0) {
+    emptyState.hidden = false;
+    emptyState.innerHTML = '<p>No se encontraron postulaciones con esos filtros.</p>';
     counter.textContent = '0';
     return;
   }
 
   emptyState.hidden = true;
-  counter.textContent = String(postulaciones.length);
+  counter.textContent = String(filteredPostulaciones.length);
 
-  postulaciones.forEach((postulacion) => {
+  filteredPostulaciones.forEach((postulacion) => {
     const item = document.createElement('li');
     item.className = 'application-item';
+    item.style.setProperty('--state-color', getStateColor(postulacion.estado));
 
-    const classKey = getStateClassKey(postulacion.estado);
+    const notesMarkup = postulacion.notas
+      ? `<p class="notes">${escapeHtml(postulacion.notas)}</p>`
+      : '';
 
     item.innerHTML = `
       <div class="item-header">
@@ -106,11 +178,13 @@ function renderList() {
         <strong>${formatDate(postulacion.fecha)}</strong>
       </div>
 
+      ${notesMarkup}
+
       <div class="item-status-editor">
         <label class="status-label" for="estado-${postulacion.id}">Estado</label>
         <select
           id="estado-${postulacion.id}"
-          class="status-select state-${classKey}"
+          class="status-select state-${getStateClassKey(postulacion.estado)}"
           data-id="${postulacion.id}"
           aria-label="Cambiar estado de la postulación"
         >
@@ -135,6 +209,13 @@ function renderList() {
     `;
 
     list.appendChild(item);
+  });
+}
+
+function renderFilterChips() {
+  filterButtons.forEach((button) => {
+    const isActive = button.dataset.filter === currentFilter;
+    button.classList.toggle('is-active', isActive);
   });
 }
 
@@ -167,6 +248,7 @@ function addPostulacion(event) {
 
   postulaciones = [nuevaPostulacion, ...postulaciones];
   savePostulaciones();
+  renderSummary();
   renderList();
   resetForm();
 }
@@ -174,6 +256,7 @@ function addPostulacion(event) {
 function removePostulacion(id) {
   postulaciones = postulaciones.filter((postulacion) => postulacion.id !== id);
   savePostulaciones();
+  renderSummary();
   renderList();
 }
 
@@ -186,6 +269,7 @@ function updateEstado(id, nuevoEstado) {
 
   postulacion.estado = nuevoEstado;
   savePostulaciones();
+  renderSummary();
   renderList();
 }
 
@@ -201,6 +285,19 @@ function updateNotas(id, nuevoTexto) {
 }
 
 form.addEventListener('submit', addPostulacion);
+
+searchInput.addEventListener('input', (event) => {
+  currentSearch = event.target.value;
+  renderList();
+});
+
+filterButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    currentFilter = button.dataset.filter;
+    renderFilterChips();
+    renderList();
+  });
+});
 
 list.addEventListener('click', (event) => {
   const button = event.target.closest('.delete-button');
@@ -239,18 +336,25 @@ list.addEventListener('change', (event) => {
   }
 });
 
-list.addEventListener('blur', (event) => {
-  const input = event.target.closest('.notes-input');
+list.addEventListener(
+  'blur',
+  (event) => {
+    const input = event.target.closest('.notes-input');
 
-  if (!input) {
-    return;
-  }
+    if (!input) {
+      return;
+    }
 
-  const { id } = input.dataset;
+    const { id } = input.dataset;
 
-  if (id) {
-    updateNotas(id, input.value);
-  }
-}, true);
+    if (id) {
+      updateNotas(id, input.value);
+    }
+  },
+  true
+);
 
+renderSummary();
+renderFilterChips();
 renderList();
+
