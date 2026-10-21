@@ -1,5 +1,4 @@
-const STORAGE_KEY = 'app-postulaciones';
-const VALID_STATES = ['Enviado', 'En proceso', 'Rechazado', 'Oferta'];
+const STORAGE_KEY = 'postulaciones-app';
 
 const form = document.querySelector('#application-form');
 const empresaInput = document.querySelector('#empresa');
@@ -13,48 +12,16 @@ const counter = document.querySelector('#counter');
 
 let postulaciones = loadPostulaciones();
 
-function buildValidItem(rawItem) {
-  if (!rawItem || typeof rawItem !== 'object') {
-    return null;
-  }
-
-  const empresa = typeof rawItem.empresa === 'string' ? rawItem.empresa.trim() : '';
-  const rol = typeof rawItem.rol === 'string' ? rawItem.rol.trim() : '';
-  const fecha = typeof rawItem.fecha === 'string' ? rawItem.fecha : '';
-  const estado = VALID_STATES.includes(rawItem.estado) ? rawItem.estado : null;
-  const notas = typeof rawItem.notas === 'string' ? rawItem.notas.trim() : '';
-
-  if (!empresa || !rol || !fecha || !estado) {
-    return null;
-  }
-
-  return {
-    id: String(rawItem.id || crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
-    empresa,
-    rol,
-    fecha,
-    estado,
-    notas: notas || '',
-  };
-}
-
 function loadPostulaciones() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const savedData = localStorage.getItem(STORAGE_KEY);
 
-  if (!raw) {
+  if (!savedData) {
     return [];
   }
 
   try {
-    const parsed = JSON.parse(raw);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => buildValidItem(item))
-      .filter(Boolean);
+    const parsedData = JSON.parse(savedData);
+    return Array.isArray(parsedData) ? parsedData : [];
   } catch (error) {
     return [];
   }
@@ -79,8 +46,7 @@ function formatDate(dateString) {
 }
 
 function renderStatusBadge(estado) {
-  const className = `status-${estado}`;
-  return `<span class="status-badge ${className}">${estado}</span>`;
+  return `<span class="status-badge status-${estado}">${estado}</span>`;
 }
 
 function renderList() {
@@ -100,14 +66,14 @@ function renderList() {
     item.className = 'application-item';
 
     const notesMarkup = postulacion.notas
-      ? `<p class="notes">${escapeHtml(postulacion.notas)}</p>`
+      ? `<p class="notes">${postulacion.notas}</p>`
       : '';
 
     item.innerHTML = `
       <div class="item-header">
         <div>
-          <h3 class="company-name">${escapeHtml(postulacion.empresa)}</h3>
-          <p class="role-name">${escapeHtml(postulacion.rol)}</p>
+          <h3 class="company-name">${postulacion.empresa}</h3>
+          <p class="role-name">${postulacion.rol}</p>
         </div>
         ${renderStatusBadge(postulacion.estado)}
       </div>
@@ -126,15 +92,6 @@ function renderList() {
 
     list.appendChild(item);
   });
-}
-
-function escapeHtml(value) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
 
 function resetForm() {
