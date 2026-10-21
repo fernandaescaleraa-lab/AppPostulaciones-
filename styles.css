@@ -168,6 +168,58 @@ textarea {
   transform: translateY(1px);
 }
 
+.summary-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.summary-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel-alt);
+}
+
+.summary-card.total {
+  background: #eef4ff;
+}
+
+.summary-card.enviado {
+  background: var(--gray-soft);
+}
+
+.summary-card.en-proceso {
+  background: var(--warning-soft);
+}
+
+.summary-card.rechazado {
+  background: var(--danger-soft);
+}
+
+.summary-card.oferta {
+  background: var(--success-soft);
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.summary-card strong {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text);
+}
+
 .list-header {
   display: flex;
   align-items: center;
