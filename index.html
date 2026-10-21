@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App de Postulaciones</title>
+    <meta
+      name="description"
+      content="Aplicación para gestionar postulaciones laborales con seguimiento de estado."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Seguimiento</p>
+          <h1>Postulaciones</h1>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel" aria-labelledby="form-title">
+          <div class="panel-header">
+            <h2 id="form-title">Nueva postulación</h2>
+          </div>
+
+          <form id="application-form" novalidate>
+            <div class="field-group">
+              <label for="empresa">Empresa</label>
+              <input id="empresa" name="empresa" type="text" maxlength="120" required />
+            </div>
+
+            <div class="field-group">
+              <label for="rol">Rol</label>
+              <input id="rol" name="rol" type="text" maxlength="120" required />
+            </div>
+
+            <div class="field-row">
+              <div class="field-group">
+                <label for="fecha">Fecha</label>
+                <input id="fecha" name="fecha" type="date" required />
+              </div>
+
+              <div class="field-group">
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado" required>
+                  <option value="">Seleccionar</option>
+                  <option value="Enviado">Enviado</option>
+                  <option value="En proceso">En proceso</option>
+                  <option value="Rechazado">Rechazado</option>
+                  <option value="Oferta">Oferta</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="notas">Notas</label>
+              <textarea id="notas" name="notas" rows="4" maxlength="500" placeholder="Agrega detalles o recordatorios"></textarea>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary-button">Guardar</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel panel-list" aria-labelledby="list-title">
+          <div class="panel-header list-header">
+            <h2 id="list-title">Listado</h2>
+            <span id="counter" class="counter" aria-live="polite">0</span>
+          </div>
+
+          <div id="empty-state" class="empty-state" hidden>
+            <p>No hay postulaciones cargadas.</p>
+          </div>
+
+          <ul id="applications-list" class="applications-list" aria-live="polite"></ul>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
