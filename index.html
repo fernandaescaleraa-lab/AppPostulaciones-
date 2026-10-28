@@ -25,6 +25,8 @@
         --gray-soft: #f1f5f9;
         --gray-text: #64748b;
         --shadow-soft: 0 4px 20px rgba(15, 23, 42, 0.04);
+        --warning-soft: #fff7ed;
+        --warning-text: #b45309;
       }
 
       * {
@@ -305,7 +307,8 @@
       }
 
       .meta-row {
-        display: inline-flex;
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: flex-start;
         gap: 8px;
@@ -323,6 +326,60 @@
       .meta-row strong {
         color: var(--text);
         font-size: 0.8rem;
+      }
+
+      .meta-days {
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .meta-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .meta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 9px;
+        border-radius: 999px;
+        background: #fff7fb;
+        border: 1px solid #f7d8e8;
+        color: var(--pink-text);
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .salary-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: fit-content;
+        padding: 6px 9px;
+        border-radius: 999px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .followup-alert {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: fit-content;
+        padding: 7px 10px;
+        border-radius: 10px;
+        border: 1px solid #fed7aa;
+        background: var(--warning-soft);
+        color: var(--warning-text);
+        font-size: 0.72rem;
+        font-weight: 700;
       }
 
       .notes {
@@ -460,6 +517,25 @@
         background: #fee2e2;
       }
 
+      .backup-button {
+        align-self: flex-end;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid rgba(244, 114, 182, 0.18);
+        border-radius: 12px;
+        background: linear-gradient(180deg, #fff8fb 0%, #fff1f6 100%);
+        color: var(--primary-dark);
+        font-weight: 700;
+        padding: 10px 16px;
+        box-shadow: 0 2px 10px rgba(244, 114, 182, 0.07);
+      }
+
+      .backup-button:hover {
+        background: #fce7f3;
+      }
+
       .form-panel {
         max-width: 680px;
         margin: 0 auto;
@@ -486,6 +562,12 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+      }
+
+      .field-row-two {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
       }
 
       label {
@@ -578,6 +660,10 @@
         .status-select {
           width: 100%;
         }
+
+        .field-row-two {
+          grid-template-columns: 1fr;
+        }
       }
 
       @media (min-width: 1100px) {
@@ -638,6 +724,8 @@
           </div>
 
           <ul id="applications-list" class="applications-list" aria-live="polite"></ul>
+
+          <button type="button" id="export-csv" class="backup-button">📥 Exportar a CSV</button>
         </section>
 
         <section id="view-form" class="view hidden" aria-label="Vista del formulario">
@@ -658,6 +746,28 @@
               <div class="field-group">
                 <label for="fecha">Fecha</label>
                 <input id="fecha" name="fecha" type="date" required />
+              </div>
+
+              <div class="field-row-two">
+                <div class="field-group">
+                  <label for="modalidad">Modalidad</label>
+                  <select id="modalidad" name="modalidad">
+                    <option value="">Seleccionar</option>
+                    <option value="Presencial">Presencial</option>
+                    <option value="Híbrido">Híbrido</option>
+                    <option value="Remoto">Remoto</option>
+                  </select>
+                </div>
+
+                <div class="field-group">
+                  <label for="zona">Zona / Ubicación</label>
+                  <input id="zona" name="zona" type="text" maxlength="120" placeholder="Ej: Palermo, Centro" />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="sueldo">Sueldo pretendido / acordado</label>
+                <input id="sueldo" name="sueldo" type="text" maxlength="150" placeholder="Ej: USD 1200 / 150k" />
               </div>
 
               <div class="field-group">
@@ -752,6 +862,9 @@
       const empresaInput = document.getElementById("empresa");
       const rolInput = document.getElementById("rol");
       const fechaInput = document.getElementById("fecha");
+      const modalidadInput = document.getElementById("modalidad");
+      const zonaInput = document.getElementById("zona");
+      const sueldoInput = document.getElementById("sueldo");
       const linkInput = document.getElementById("link-postulacion");
       const cvInput = document.getElementById("cv-utilizado");
       const cvFileInput = document.getElementById("cv-file");
@@ -765,6 +878,7 @@
       const emptyState = document.getElementById("empty-state");
       const formTitle = document.getElementById("form-title");
       const submitButton = document.getElementById("submit-button");
+      const exportButton = document.getElementById("export-csv");
 
       let postulaciones = loadPostulaciones();
       let editingId = null;
@@ -809,6 +923,9 @@
         const fecha = typeof item.fecha === "string" ? item.fecha : "";
         const notas = typeof item.notas === "string" ? item.notas.trim() : "";
         const estado = normalizeEstado(item.estado);
+        const modalidad = typeof item.modalidad === "string" ? item.modalidad.trim() : "";
+        const zona = typeof item.zona === "string" ? item.zona.trim() : "";
+        const sueldo = typeof item.sueldo === "string" ? item.sueldo.trim() : "";
         const linkVacante = normalizeLink(item.linkVacante);
         const cvUtilizado = typeof item.cvUtilizado === "string" ? item.cvUtilizado.trim() : "";
         const cvFileData = typeof item.cvFileData === "string" ? item.cvFileData : "";
@@ -835,6 +952,9 @@
           rol,
           fecha,
           estado,
+          modalidad,
+          zona,
+          sueldo,
           linkVacante,
           cvUtilizado,
           cvFileData,
@@ -890,6 +1010,22 @@
           month: "2-digit",
           year: "numeric"
         }).format(date);
+      }
+
+      function getDaysSince(dateString) {
+        const date = new Date(`${dateString}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return 0;
+
+        const today = new Date();
+        const diffMs = today.getTime() - date.getTime();
+        return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      }
+
+      function formatDaysAgo(dateString) {
+        const days = getDaysSince(dateString);
+        if (days === 0) return "Hoy";
+        if (days === 1) return "Hace 1 día";
+        return `Hace ${days} días`;
       }
 
       function updateMetrics() {
@@ -978,7 +1114,38 @@
 
           const meta = document.createElement("div");
           meta.className = "meta-row";
-          meta.innerHTML = `<span aria-hidden="true">📅</span><strong>${formatDate(postulacion.fecha)}</strong>`;
+          meta.innerHTML = `<span aria-hidden="true">📅</span><strong>${formatDate(postulacion.fecha)}</strong><span class="meta-days">${formatDaysAgo(postulacion.fecha)}</span>`;
+
+          const badges = document.createElement("div");
+          badges.className = "meta-badges";
+
+          if (postulacion.modalidad) {
+            const modalidad = document.createElement("span");
+            modalidad.className = "meta-badge";
+            modalidad.textContent = `📍 ${postulacion.modalidad}`;
+            badges.appendChild(modalidad);
+          }
+
+          if (postulacion.zona) {
+            const zona = document.createElement("span");
+            zona.className = "meta-badge";
+            zona.textContent = `📌 ${postulacion.zona}`;
+            badges.appendChild(zona);
+          }
+
+          if (postulacion.sueldo) {
+            const sueldo = document.createElement("div");
+            sueldo.className = "salary-badge";
+            sueldo.textContent = `💰 ${postulacion.sueldo}`;
+            badges.appendChild(sueldo);
+          }
+
+          const followUp = document.createElement("div");
+          const daysSince = getDaysSince(postulacion.fecha);
+          if (postulacion.estado === "Enviado" && daysSince > 10) {
+            followUp.className = "followup-alert";
+            followUp.textContent = "⚠️ Enviar seguimiento";
+          }
 
           const contactBlock = document.createElement("div");
           contactBlock.className = "card-block";
@@ -1071,7 +1238,7 @@
 
           actions.append(editButton, deleteButton);
 
-          item.append(top, meta, notes, contactBlock, linksWrap, gallery, actions);
+          item.append(top, meta, badges, followUp, notes, contactBlock, linksWrap, gallery, actions);
           listElement.appendChild(item);
         });
       }
@@ -1094,6 +1261,9 @@
         empresaInput.value = postulacion.empresa;
         rolInput.value = postulacion.rol;
         fechaInput.value = postulacion.fecha;
+        modalidadInput.value = postulacion.modalidad || "";
+        zonaInput.value = postulacion.zona || "";
+        sueldoInput.value = postulacion.sueldo || "";
         linkInput.value = postulacion.linkVacante;
         cvInput.value = postulacion.cvUtilizado;
         estadoInput.value = postulacion.estado;
@@ -1112,6 +1282,65 @@
         existingScreenshots = [];
         formTitle.textContent = "Nueva postulación";
         submitButton.textContent = "Guardar";
+      }
+
+      function exportCsv() {
+        const headers = [
+          "Empresa",
+          "Rol",
+          "Fecha",
+          "Modalidad",
+          "Zona",
+          "Sueldo",
+          "Estado",
+          "Link de la postulación",
+          "CV utilizado",
+          "Archivo CV",
+          "Recruiter / Contacto",
+          "Medio de contacto",
+          "Link de contacto",
+          "Notas"
+        ];
+
+        const rows = [headers];
+
+        postulaciones.forEach((postulacion) => {
+          rows.push([
+            postulacion.empresa,
+            postulacion.rol,
+            postulacion.fecha,
+            postulacion.modalidad,
+            postulacion.zona,
+            postulacion.sueldo,
+            postulacion.estado,
+            postulacion.linkVacante,
+            postulacion.cvUtilizado,
+            postulacion.cvFileName,
+            postulacion.recruiterNombre,
+            postulacion.recruiterMedio,
+            postulacion.recruiterLink,
+            postulacion.notas
+          ]);
+        });
+
+        const escapeCsv = (value) => {
+          const text = String(value ?? "");
+          return `"${text.replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+        };
+
+        const csv = rows
+          .map((row) => row.map(escapeCsv).join(","))
+          .join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "postulaciones.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       }
 
       form.addEventListener("submit", async (event) => {
@@ -1137,6 +1366,9 @@
           empresa,
           rol,
           fecha,
+          modalidad: modalidadInput.value.trim(),
+          zona: zonaInput.value.trim(),
+          sueldo: sueldoInput.value.trim(),
           linkVacante: normalizeLink(linkInput.value),
           cvUtilizado: cvInput.value.trim(),
           cvFileData: "",
@@ -1174,6 +1406,8 @@
           setView(nextView);
         });
       });
+
+      exportButton.addEventListener("click", exportCsv);
 
       renderList();
       updateMetrics();
