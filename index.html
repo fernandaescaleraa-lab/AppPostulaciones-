@@ -284,18 +284,64 @@
         margin: 0 0 12px;
       }
 
+      .card-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(244, 114, 182, 0.3);
+        background: var(--primary-soft);
+        color: var(--primary-dark);
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .link-button:hover {
+        background: #fce7f3;
+      }
+
+      .link-text {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: #f3f4f6;
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
       .card-actions {
         display: flex;
         justify-content: flex-end;
+        gap: 8px;
       }
 
+      .edit-button,
       .delete-button {
         border: none;
-        background: transparent;
-        color: #dc2626;
         font-weight: 700;
         padding: 8px 10px;
         border-radius: 10px;
+      }
+
+      .edit-button {
+        background: var(--primary-soft);
+        color: var(--primary-dark);
+      }
+
+      .delete-button {
+        background: transparent;
+        color: #dc2626;
       }
 
       .delete-button:hover {
@@ -469,7 +515,7 @@
 
         <section id="view-form" class="view hidden" aria-label="Vista del formulario">
           <div class="form-panel">
-            <h2>Nueva postulación</h2>
+            <h2 id="form-title">Nueva postulación</h2>
 
             <form id="application-form" novalidate>
               <div class="field-group">
@@ -485,6 +531,22 @@
               <div class="field-group">
                 <label for="fecha">Fecha</label>
                 <input id="fecha" name="fecha" type="date" required />
+              </div>
+
+              <div class="field-group">
+                <label for="link-postulacion">Link de la postulación</label>
+                <input id="link-postulacion" name="link-postulacion" type="url" placeholder="https://..." />
+              </div>
+
+              <div class="field-group">
+                <label for="cv-utilizado">CV utilizado</label>
+                <input
+                  id="cv-utilizado"
+                  name="cv-utilizado"
+                  type="text"
+                  maxlength="300"
+                  placeholder="Pega el link de Drive/LinkedIn o el nombre del archivo"
+                />
               </div>
 
               <div class="field-group">
@@ -510,7 +572,7 @@
               </div>
 
               <div class="actions">
-                <button type="submit" class="primary-button">Guardar</button>
+                <button type="submit" id="submit-button" class="primary-button">Guardar</button>
               </div>
             </form>
           </div>
@@ -532,15 +594,36 @@
       const empresaInput = document.getElementById("empresa");
       const rolInput = document.getElementById("rol");
       const fechaInput = document.getElementById("fecha");
+      const linkInput = document.getElementById("link-postulacion");
+      const cvInput = document.getElementById("cv-utilizado");
       const estadoInput = document.getElementById("estado");
       const notasInput = document.getElementById("notas");
       const listElement = document.getElementById("applications-list");
       const emptyState = document.getElementById("empty-state");
+      const formTitle = document.getElementById("form-title");
+      const submitButton = document.getElementById("submit-button");
 
       let postulaciones = loadPostulaciones();
+      let editingId = null;
 
       function normalizeEstado(value) {
         return VALID_ESTADOS.includes(value) ? value : "Enviado";
+      }
+
+      function normalizeLink(value) {
+        if (typeof value !== "string") return "";
+        const trimmed = value.trim();
+        if (!trimmed) return "";
+
+        if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
+          return trimmed;
+        }
+
+        if (/^(www\.)/i.test(trimmed) || /\.[a-z]{2,}/i.test(trimmed)) {
+          return `https://${trimmed}`;
+        }
+
+        return "";
       }
 
       function normalizePostulacion(item) {
@@ -553,6 +636,8 @@
         const fecha = typeof item.fecha === "string" ? item.fecha : "";
         const notas = typeof item.notas === "string" ? item.notas.trim() : "";
         const estado = normalizeEstado(item.estado);
+        const linkVacante = normalizeLink(item.linkVacante);
+        const cvUtilizado = typeof item.cvUtilizado === "string" ? item.cvUtilizado.trim() : "";
 
         if (!empresa || !rol || !fecha) {
           return null;
@@ -569,6 +654,8 @@
           rol,
           fecha,
           estado,
+          linkVacante,
+          cvUtilizado,
           notas
         };
       }
@@ -638,6 +725,16 @@
         document.getElementById("metric-oferta").textContent = String(summary.Oferta);
       }
 
+      function buildLinkButton(label, href) {
+        const link = document.createElement("a");
+        link.className = "link-button";
+        link.href = href;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = label;
+        return link;
+      }
+
       function renderList() {
         listElement.innerHTML = "";
 
@@ -696,17 +793,44 @@
 
           meta.append(metaLabel, metaValue);
 
+          const linksWrap = document.createElement("div");
+          linksWrap.className = "card-links";
+
+          if (postulacion.linkVacante) {
+            const vacanteLink = buildLinkButton("Ver vacante", postulacion.linkVacante);
+            linksWrap.appendChild(vacanteLink);
+          }
+
+          if (postulacion.cvUtilizado) {
+            const cvHref = normalizeLink(postulacion.cvUtilizado);
+            if (cvHref) {
+              const cvLink = buildLinkButton("CV", cvHref);
+              linksWrap.appendChild(cvLink);
+            } else {
+              const cvText = document.createElement("span");
+              cvText.className = "link-text";
+              cvText.textContent = `CV: ${postulacion.cvUtilizado}`;
+              linksWrap.appendChild(cvText);
+            }
+          }
+
           if (postulacion.notas) {
             const notes = document.createElement("p");
             notes.className = "notes";
             notes.textContent = postulacion.notas;
-            item.append(top, meta, notes);
+            item.append(top, meta, linksWrap, notes);
           } else {
-            item.append(top, meta);
+            item.append(top, meta, linksWrap);
           }
 
           const actions = document.createElement("div");
           actions.className = "card-actions";
+
+          const editButton = document.createElement("button");
+          editButton.type = "button";
+          editButton.className = "edit-button";
+          editButton.textContent = "Editar";
+          editButton.dataset.id = postulacion.id;
 
           const deleteButton = document.createElement("button");
           deleteButton.type = "button";
@@ -714,7 +838,7 @@
           deleteButton.textContent = "Eliminar";
           deleteButton.dataset.id = postulacion.id;
 
-          actions.appendChild(deleteButton);
+          actions.append(editButton, deleteButton);
           item.appendChild(actions);
 
           listElement.appendChild(item);
@@ -726,13 +850,40 @@
         renderList();
       }
 
+      function fillForm(postulacion) {
+        empresaInput.value = postulacion.empresa || "";
+        rolInput.value = postulacion.rol || "";
+        fechaInput.value = postulacion.fecha || "";
+        linkInput.value = postulacion.linkVacante || "";
+        cvInput.value = postulacion.cvUtilizado || "";
+        estadoInput.value = postulacion.estado || "";
+        notasInput.value = postulacion.notas || "";
+      }
+
       function resetForm() {
         form.reset();
+        editingId = null;
+        formTitle.textContent = "Nueva postulación";
+        submitButton.textContent = "Guardar";
         empresaInput.focus();
+      }
+
+      function startEdit(postulacionId) {
+        const postulacion = postulaciones.find((item) => item.id === postulacionId);
+        if (!postulacion) return;
+
+        editingId = postulacionId;
+        fillForm(postulacion);
+        formTitle.textContent = "Editar postulación";
+        submitButton.textContent = "Guardar cambios";
+        setView("form");
       }
 
       navButtons.forEach((button) => {
         button.addEventListener("click", () => {
+          if (button.dataset.view === "form" && !editingId) {
+            resetForm();
+          }
           setView(button.dataset.view);
         });
       });
@@ -743,6 +894,8 @@
         const empresa = empresaInput.value.trim();
         const rol = rolInput.value.trim();
         const fecha = fechaInput.value;
+        const linkVacante = normalizeLink(linkInput.value);
+        const cvUtilizado = cvInput.value.trim();
         const estado = estadoInput.value;
         const notas = notasInput.value.trim();
 
@@ -751,16 +904,25 @@
           return;
         }
 
-        const nuevaPostulacion = {
-          id: `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        const newPostulacion = {
+          id: editingId || `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           empresa,
           rol,
           fecha,
+          linkVacante,
+          cvUtilizado,
           estado: normalizeEstado(estado),
           notas
         };
 
-        postulaciones = [nuevaPostulacion, ...postulaciones];
+        if (editingId) {
+          postulaciones = postulaciones.map((postulacion) =>
+            postulacion.id === editingId ? newPostulacion : postulacion
+          );
+        } else {
+          postulaciones = [newPostulacion, ...postulaciones];
+        }
+
         savePostulaciones();
         renderApp();
         resetForm();
@@ -768,14 +930,21 @@
       });
 
       listElement.addEventListener("click", (event) => {
-        const button = event.target.closest(".delete-button");
-
-        if (!button) {
+        const editButton = event.target.closest(".edit-button");
+        if (editButton) {
+          const { id } = editButton.dataset;
+          if (id) {
+            startEdit(id);
+          }
           return;
         }
 
-        const { id } = button.dataset;
+        const deleteButton = event.target.closest(".delete-button");
+        if (!deleteButton) {
+          return;
+        }
 
+        const { id } = deleteButton.dataset;
         if (!id) {
           return;
         }
