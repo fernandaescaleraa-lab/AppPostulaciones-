@@ -1399,34 +1399,28 @@
         const empresa = empresaInput.value.trim();
         const rol = rolInput.value.trim();
         const fecha = fechaInput.value;
-        const estado = normalizeEstado(estadoInput.value);
+        const estado = estadoInput.value;
 
         if (!empresa || !rol || !fecha || !estado) {
           return;
         }
 
-        const screenshots = [...(existingScreenshots || [])];
-
-        for (const file of screenshotInput.files || []) {
-          screenshots.push(await readFileAsDataUrl(file));
-        }
-
         const payload = {
-          id: editingId || `post-${Date.now()}`,
+          id: editingId || `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           empresa,
           rol,
           fecha,
           modalidad: modalidadInput.value.trim(),
           zona: zonaInput.value.trim(),
           sueldo: sueldoInput.value.trim(),
-          linkVacante: normalizeLink(linkInput.value),
+          linkVacante: linkInput.value.trim(),
           cvUtilizado: cvInput.value.trim(),
           cvFileData: "",
           cvFileName: "",
-          screenshots,
+          screenshots: [...existingScreenshots],
           recruiterNombre: recruiterNombreInput.value.trim(),
           recruiterMedio: recruiterMedioInput.value,
-          recruiterLink: normalizeLink(recruiterLinkInput.value),
+          recruiterLink: recruiterLinkInput.value.trim(),
           estado,
           notas: notasInput.value.trim()
         };
@@ -1437,6 +1431,12 @@
           payload.cvFileName = file.name;
         }
 
+        if (screenshotInput.files) {
+          for (const file of screenshotInput.files) {
+            payload.screenshots.push(await readFileAsDataUrl(file));
+          }
+        }
+
         if (editingId) {
           postulaciones = postulaciones.map((item) => (item.id === editingId ? payload : item));
         } else {
@@ -1444,10 +1444,10 @@
         }
 
         savePostulaciones();
-        renderList();
-        updateMetrics();
         resetForm();
         setView("list");
+        renderList();
+        updateMetrics();
       });
 
       navButtons.forEach((button) => {
