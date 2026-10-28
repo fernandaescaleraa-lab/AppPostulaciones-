@@ -291,18 +291,23 @@
         margin-bottom: 12px;
       }
 
-      .link-button {
+      .link-button,
+      .link-text {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 34px;
         padding: 8px 12px;
         border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .link-button {
         border: 1px solid rgba(244, 114, 182, 0.3);
         background: var(--primary-soft);
         color: var(--primary-dark);
-        text-decoration: none;
-        font-size: 0.8rem;
-        font-weight: 700;
       }
 
       .link-button:hover {
@@ -310,14 +315,8 @@
       }
 
       .link-text {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 10px;
-        border-radius: 10px;
         background: #f3f4f6;
         color: var(--muted);
-        font-size: 0.8rem;
-        font-weight: 600;
       }
 
       .card-actions {
@@ -550,6 +549,11 @@
               </div>
 
               <div class="field-group">
+                <label for="cv-file">Subir archivo del CV</label>
+                <input id="cv-file" name="cv-file" type="file" accept=".pdf,.doc,.docx,.odt,.ppt,.pptx,image/png,image/jpeg" />
+              </div>
+
+              <div class="field-group">
                 <label for="estado">Estado</label>
                 <select id="estado" name="estado" required>
                   <option value="">Seleccionar</option>
@@ -596,6 +600,7 @@
       const fechaInput = document.getElementById("fecha");
       const linkInput = document.getElementById("link-postulacion");
       const cvInput = document.getElementById("cv-utilizado");
+      const cvFileInput = document.getElementById("cv-file");
       const estadoInput = document.getElementById("estado");
       const notasInput = document.getElementById("notas");
       const listElement = document.getElementById("applications-list");
@@ -626,6 +631,15 @@
         return "";
       }
 
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+          reader.readAsDataURL(file);
+        });
+      }
+
       function normalizePostulacion(item) {
         if (!item || typeof item !== "object") {
           return null;
@@ -638,6 +652,8 @@
         const estado = normalizeEstado(item.estado);
         const linkVacante = normalizeLink(item.linkVacante);
         const cvUtilizado = typeof item.cvUtilizado === "string" ? item.cvUtilizado.trim() : "";
+        const cvFileData = typeof item.cvFileData === "string" ? item.cvFileData : "";
+        const cvFileName = typeof item.cvFileName === "string" ? item.cvFileName.trim() : "";
 
         if (!empresa || !rol || !fecha) {
           return null;
@@ -656,6 +672,8 @@
           estado,
           linkVacante,
           cvUtilizado,
+          cvFileData,
+          cvFileName,
           notas
         };
       }
@@ -725,12 +743,15 @@
         document.getElementById("metric-oferta").textContent = String(summary.Oferta);
       }
 
-      function buildLinkButton(label, href) {
+      function buildLinkButton(label, href, isDownload = false) {
         const link = document.createElement("a");
         link.className = "link-button";
         link.href = href;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
+        if (isDownload) {
+          link.download = "CV.pdf";
+        }
         link.textContent = label;
         return link;
       }
@@ -801,10 +822,11 @@
             linksWrap.appendChild(vacanteLink);
           }
 
-          if (postulacion.cvUtilizado) {
-            const cvHref = normalizeLink(postulacion.cvUtilizado);
+          if (postulacion.cvFileData || postulacion.cvUtilizado) {
+            const cvHref = postulacion.cvFileData || normalizeLink(postulacion.cvUtilizado);
             if (cvHref) {
-              const cvLink = buildLinkButton("CV", cvHref);
+              const cvLabel = postulacion.cvFileName ? `CV: ${postulacion.cvFileName}` : "CV";
+              const cvLink = buildLinkButton(cvLabel, cvHref, Boolean(postulacion.cvFileData));
               linksWrap.appendChild(cvLink);
             } else {
               const cvText = document.createElement("span");
@@ -856,12 +878,14 @@
         fechaInput.value = postulacion.fecha || "";
         linkInput.value = postulacion.linkVacante || "";
         cvInput.value = postulacion.cvUtilizado || "";
+        cvFileInput.value = "";
         estadoInput.value = postulacion.estado || "";
         notasInput.value = postulacion.notas || "";
       }
 
       function resetForm() {
         form.reset();
+        cvFileInput.value = "";
         editingId = null;
         formTitle.textContent = "Nueva postulación";
         submitButton.textContent = "Guardar";
@@ -888,20 +912,32 @@
         });
       });
 
-      form.addEventListener("submit", (event) => {
+      form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const empresa = empresaInput.value.trim();
         const rol = rolInput.value.trim();
         const fecha = fechaInput.value;
         const linkVacante = normalizeLink(linkInput.value);
-        const cvUtilizado = cvInput.value.trim();
         const estado = estadoInput.value;
         const notas = notasInput.value.trim();
 
         if (!empresa || !rol || !fecha || !estado) {
           form.reportValidity();
           return;
+        }
+
+        let cvUtilizado = cvInput.value.trim();
+        let cvFileData = "";
+        let cvFileName = "";
+
+        if (cvFileInput.files && cvFileInput.files[0]) {
+          const selectedFile = cvFileInput.files[0];
+          cvFileData = await readFileAsDataUrl(selectedFile);
+          cvFileName = selectedFile.name;
+          if (!cvUtilizado) {
+            cvUtilizado = selectedFile.name;
+          }
         }
 
         const newPostulacion = {
@@ -911,6 +947,8 @@
           fecha,
           linkVacante,
           cvUtilizado,
+          cvFileData,
+          cvFileName,
           estado: normalizeEstado(estado),
           notas
         };
