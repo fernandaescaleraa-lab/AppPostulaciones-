@@ -251,6 +251,17 @@
         color: var(--gray-text);
       }
 
+      .status-select {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--text);
+        padding: 6px 10px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        min-width: 120px;
+      }
+
       .meta-row {
         display: flex;
         justify-content: space-between;
@@ -657,12 +668,22 @@
 
           textGroup.append(company, role);
 
-          const badge = document.createElement("span");
-          badge.className = "status-badge";
-          badge.dataset.status = postulacion.estado;
-          badge.textContent = postulacion.estado;
+          const statusSelect = document.createElement("select");
+          statusSelect.className = "status-select";
+          statusSelect.dataset.id = postulacion.id;
+          statusSelect.setAttribute("aria-label", `Cambiar estado de ${postulacion.empresa}`);
 
-          top.append(textGroup, badge);
+          ["Enviado", "En proceso", "Oferta", "Rechazado"].forEach((estado) => {
+            const option = document.createElement("option");
+            option.value = estado;
+            option.textContent = estado;
+            if (estado === postulacion.estado) {
+              option.selected = true;
+            }
+            statusSelect.appendChild(option);
+          });
+
+          top.append(textGroup, statusSelect);
 
           const meta = document.createElement("div");
           meta.className = "meta-row";
@@ -760,6 +781,28 @@
         }
 
         postulaciones = postulaciones.filter((postulacion) => postulacion.id !== id);
+        savePostulaciones();
+        renderApp();
+      });
+
+      listElement.addEventListener("change", (event) => {
+        const select = event.target.closest(".status-select");
+
+        if (!select) {
+          return;
+        }
+
+        const { id } = select.dataset;
+        const estado = normalizeEstado(select.value);
+
+        if (!id || !estado) {
+          return;
+        }
+
+        postulaciones = postulaciones.map((postulacion) =>
+          postulacion.id === id ? { ...postulacion, estado } : postulacion
+        );
+
         savePostulaciones();
         renderApp();
       });
