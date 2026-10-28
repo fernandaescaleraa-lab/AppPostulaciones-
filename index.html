@@ -150,6 +150,9 @@
 
       .metric-card {
         position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         background: linear-gradient(180deg, #ffffff 0%, #fffafc 100%);
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -164,21 +167,23 @@
       }
 
       .metric-card::before {
-        content: "";
-        display: inline-block;
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        margin-right: 10px;
-        vertical-align: middle;
-        background: var(--primary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        font-size: 0.85rem;
+        line-height: 1;
+        background: rgba(244, 114, 182, 0.1);
       }
 
-      .metric-card:nth-child(1)::before { background: #f9a8d4; }
-      .metric-card:nth-child(2)::before { background: #a7f3d0; }
-      .metric-card:nth-child(3)::before { background: #93c5fd; }
-      .metric-card:nth-child(4)::before { background: #fbcfe8; }
-      .metric-card:nth-child(5)::before { background: #c4b5fd; }
+      .metric-card:nth-child(1)::before { content: "📊"; background: rgba(249, 168, 212, 0.12); }
+      .metric-card:nth-child(2)::before { content: "📨"; background: rgba(167, 243, 208, 0.16); }
+      .metric-card:nth-child(3)::before { content: "⏳"; background: rgba(147, 197, 253, 0.16); }
+      .metric-card:nth-child(4)::before { content: "❌"; background: rgba(251, 207, 232, 0.15); }
+      .metric-card:nth-child(5)::before { content: "✨"; background: rgba(196, 181, 253, 0.16); }
 
       .metric-label {
         display: inline-flex;
@@ -215,7 +220,7 @@
         margin: 0;
         padding: 0;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 20px;
       }
 
@@ -238,17 +243,20 @@
       }
 
       .card-top {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        align-items: center;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
         gap: 12px;
       }
 
       .card-title-group {
         min-width: 0;
-        display: flex;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
         align-items: center;
-        gap: 12px;
+        column-gap: 12px;
+        row-gap: 4px;
+        flex: 1;
       }
 
       .company-initial {
@@ -262,6 +270,8 @@
         font-weight: 800;
         font-size: 1.05rem;
         flex-shrink: 0;
+        grid-column: 1;
+        grid-row: 1 / span 2;
       }
 
       .company-name {
@@ -269,6 +279,8 @@
         font-weight: 800;
         color: var(--text);
         letter-spacing: -0.03em;
+        grid-column: 2;
+        grid-row: 1;
       }
 
       .role-name {
@@ -276,7 +288,8 @@
         font-size: 0.94rem;
         font-weight: 600;
         line-height: 1.45;
-        margin-top: 6px;
+        grid-column: 2;
+        grid-row: 2;
       }
 
       .status-select {
@@ -287,7 +300,7 @@
         padding: 7px 10px;
         font-size: 0.72rem;
         font-weight: 700;
-        min-width: 120px;
+        min-width: 118px;
         text-align: center;
       }
 
@@ -558,7 +571,18 @@
         }
 
         .card-top {
-          grid-template-columns: 1fr;
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .status-select {
+          width: 100%;
+        }
+      }
+
+      @media (min-width: 1100px) {
+        .applications-list {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
     </style>
@@ -933,8 +957,7 @@
           role.className = "role-name";
           role.textContent = postulacion.rol;
 
-          textGroup.append(initial, company);
-          textGroup.append(role);
+          textGroup.append(initial, company, role);
 
           const statusSelect = document.createElement("select");
           statusSelect.className = "status-select";
@@ -998,51 +1021,34 @@
             } else {
               const cvText = document.createElement("span");
               cvText.className = "link-text";
-              cvText.textContent = `CV: ${postulacion.cvUtilizado}`;
+              cvText.textContent = "CV disponible";
               linksWrap.appendChild(cvText);
             }
           }
 
           const gallery = document.createElement("div");
           gallery.className = "card-gallery";
-          if (Array.isArray(postulacion.screenshots) && postulacion.screenshots.length > 0) {
-            postulacion.screenshots.forEach((src) => {
+
+          if (postulacion.screenshots && postulacion.screenshots.length) {
+            postulacion.screenshots.forEach((screenshot) => {
               const imageLink = document.createElement("a");
-              imageLink.href = src;
+              imageLink.className = "image-link";
+              imageLink.href = screenshot;
               imageLink.target = "_blank";
               imageLink.rel = "noopener noreferrer";
-              imageLink.className = "image-link";
 
-              const image = document.createElement("img");
-              image.src = src;
-              image.alt = "Captura de la postulación";
-              image.className = "screenshot-thumb";
-
-              imageLink.appendChild(image);
+              const img = document.createElement("img");
+              img.className = "screenshot-thumb";
+              img.src = screenshot;
+              img.alt = `Captura de ${postulacion.empresa}`;
+              imageLink.appendChild(img);
               gallery.appendChild(imageLink);
             });
           }
 
-          if (postulacion.notas) {
-            const notes = document.createElement("p");
-            notes.className = "notes";
-            notes.textContent = postulacion.notas;
-            item.append(top, meta, notes);
-          } else {
-            item.append(top, meta);
-          }
-
-          if (hasContact) {
-            item.append(contactBlock);
-          }
-
-          if (linksWrap.childNodes.length > 0) {
-            item.append(linksWrap);
-          }
-
-          if (gallery.childNodes.length > 0) {
-            item.append(gallery);
-          }
+          const notes = document.createElement("p");
+          notes.className = "notes";
+          notes.textContent = postulacion.notas || "Sin notas adicionales.";
 
           const actions = document.createElement("div");
           actions.className = "card-actions";
@@ -1051,72 +1057,62 @@
           editButton.type = "button";
           editButton.className = "edit-button";
           editButton.textContent = "Editar";
-          editButton.dataset.id = postulacion.id;
+          editButton.addEventListener("click", () => {
+            startEditing(postulacion.id);
+          });
 
           const deleteButton = document.createElement("button");
           deleteButton.type = "button";
           deleteButton.className = "delete-button";
           deleteButton.textContent = "Eliminar";
-          deleteButton.dataset.id = postulacion.id;
+          deleteButton.addEventListener("click", () => {
+            deletePostulacion(postulacion.id);
+          });
 
           actions.append(editButton, deleteButton);
-          item.appendChild(actions);
 
+          item.append(top, meta, notes, contactBlock, linksWrap, gallery, actions);
           listElement.appendChild(item);
         });
       }
 
-      function renderApp() {
-        updateMetrics();
+      function deletePostulacion(id) {
+        postulaciones = postulaciones.filter((postulacion) => postulacion.id !== id);
+        savePostulaciones();
         renderList();
+        updateMetrics();
       }
 
-      function fillForm(postulacion) {
-        empresaInput.value = postulacion.empresa || "";
-        rolInput.value = postulacion.rol || "";
-        fechaInput.value = postulacion.fecha || "";
-        linkInput.value = postulacion.linkVacante || "";
-        cvInput.value = postulacion.cvUtilizado || "";
-        cvFileInput.value = "";
-        recruiterNombreInput.value = postulacion.recruiterNombre || "";
-        recruiterMedioInput.value = postulacion.recruiterMedio || "";
-        recruiterLinkInput.value = postulacion.recruiterLink || "";
-        estadoInput.value = postulacion.estado || "";
-        notasInput.value = postulacion.notas || "";
-        screenshotInput.value = "";
-        existingScreenshots = Array.isArray(postulacion.screenshots) ? [...postulacion.screenshots] : [];
+      function startEditing(id) {
+        const postulacion = postulaciones.find((item) => item.id === id);
+        if (!postulacion) return;
+
+        editingId = id;
+        formTitle.textContent = "Editar postulación";
+        submitButton.textContent = "Actualizar";
+
+        empresaInput.value = postulacion.empresa;
+        rolInput.value = postulacion.rol;
+        fechaInput.value = postulacion.fecha;
+        linkInput.value = postulacion.linkVacante;
+        cvInput.value = postulacion.cvUtilizado;
+        estadoInput.value = postulacion.estado;
+        notasInput.value = postulacion.notas;
+        recruiterNombreInput.value = postulacion.recruiterNombre;
+        recruiterMedioInput.value = postulacion.recruiterMedio;
+        recruiterLinkInput.value = postulacion.recruiterLink;
+        existingScreenshots = postulacion.screenshots || [];
+
+        setView("form");
       }
 
       function resetForm() {
         form.reset();
-        cvFileInput.value = "";
-        screenshotInput.value = "";
-        existingScreenshots = [];
         editingId = null;
+        existingScreenshots = [];
         formTitle.textContent = "Nueva postulación";
         submitButton.textContent = "Guardar";
-        empresaInput.focus();
       }
-
-      function startEdit(postulacionId) {
-        const postulacion = postulaciones.find((item) => item.id === postulacionId);
-        if (!postulacion) return;
-
-        editingId = postulacionId;
-        fillForm(postulacion);
-        formTitle.textContent = "Editar postulación";
-        submitButton.textContent = "Guardar cambios";
-        setView("form");
-      }
-
-      navButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          if (button.dataset.view === "form" && !editingId) {
-            resetForm();
-          }
-          setView(button.dataset.view);
-        });
-      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -1124,117 +1120,63 @@
         const empresa = empresaInput.value.trim();
         const rol = rolInput.value.trim();
         const fecha = fechaInput.value;
-        const linkVacante = normalizeLink(linkInput.value);
-        const recruiterNombre = recruiterNombreInput.value.trim();
-        const recruiterMedio = recruiterMedioInput.value;
-        const recruiterLink = normalizeLink(recruiterLinkInput.value);
-        const estado = estadoInput.value;
-        const notas = notasInput.value.trim();
+        const estado = normalizeEstado(estadoInput.value);
 
         if (!empresa || !rol || !fecha || !estado) {
-          form.reportValidity();
           return;
         }
 
-        let cvUtilizado = cvInput.value.trim();
-        let cvFileData = "";
-        let cvFileName = "";
+        const screenshots = [...(existingScreenshots || [])];
 
-        if (cvFileInput.files && cvFileInput.files[0]) {
-          const selectedFile = cvFileInput.files[0];
-          cvFileData = await readFileAsDataUrl(selectedFile);
-          cvFileName = selectedFile.name;
-          if (!cvUtilizado) {
-            cvUtilizado = selectedFile.name;
-          }
+        for (const file of screenshotInput.files || []) {
+          screenshots.push(await readFileAsDataUrl(file));
         }
 
-        let screenshots = [...existingScreenshots];
-        if (screenshotInput.files && screenshotInput.files.length > 0) {
-          const files = Array.from(screenshotInput.files);
-          screenshots = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
-        }
-
-        const newPostulacion = {
-          id: editingId || `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        const payload = {
+          id: editingId || `post-${Date.now()}`,
           empresa,
           rol,
           fecha,
-          linkVacante,
-          cvUtilizado,
-          cvFileData,
-          cvFileName,
+          linkVacante: normalizeLink(linkInput.value),
+          cvUtilizado: cvInput.value.trim(),
+          cvFileData: "",
+          cvFileName: "",
           screenshots,
-          recruiterNombre,
-          recruiterMedio,
-          recruiterLink,
-          estado: normalizeEstado(estado),
-          notas
+          recruiterNombre: recruiterNombreInput.value.trim(),
+          recruiterMedio: recruiterMedioInput.value,
+          recruiterLink: normalizeLink(recruiterLinkInput.value),
+          estado,
+          notas: notasInput.value.trim()
         };
 
+        if (cvFileInput.files && cvFileInput.files[0]) {
+          const file = cvFileInput.files[0];
+          payload.cvFileData = await readFileAsDataUrl(file);
+          payload.cvFileName = file.name;
+        }
+
         if (editingId) {
-          postulaciones = postulaciones.map((postulacion) =>
-            postulacion.id === editingId ? newPostulacion : postulacion
-          );
+          postulaciones = postulaciones.map((item) => (item.id === editingId ? payload : item));
         } else {
-          postulaciones = [newPostulacion, ...postulaciones];
+          postulaciones = [payload, ...postulaciones];
         }
 
         savePostulaciones();
-        renderApp();
+        renderList();
+        updateMetrics();
         resetForm();
         setView("list");
       });
 
-      listElement.addEventListener("click", (event) => {
-        const editButton = event.target.closest(".edit-button");
-        if (editButton) {
-          const { id } = editButton.dataset;
-          if (id) {
-            startEdit(id);
-          }
-          return;
-        }
-
-        const deleteButton = event.target.closest(".delete-button");
-        if (!deleteButton) {
-          return;
-        }
-
-        const { id } = deleteButton.dataset;
-        if (!id) {
-          return;
-        }
-
-        postulaciones = postulaciones.filter((postulacion) => postulacion.id !== id);
-        savePostulaciones();
-        renderApp();
+      navButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const nextView = button.dataset.view;
+          setView(nextView);
+        });
       });
 
-      listElement.addEventListener("change", (event) => {
-        const select = event.target.closest(".status-select");
-
-        if (!select) {
-          return;
-        }
-
-        const { id } = select.dataset;
-        const estado = normalizeEstado(select.value);
-
-        if (!id || !estado) {
-          return;
-        }
-
-        postulaciones = postulaciones.map((postulacion) =>
-          postulacion.id === id ? { ...postulacion, estado } : postulacion
-        );
-
-        savePostulaciones();
-        renderApp();
-      });
-
-      setView("list");
-      renderApp();
+      renderList();
+      updateMetrics();
     </script>
   </body>
 </html>
