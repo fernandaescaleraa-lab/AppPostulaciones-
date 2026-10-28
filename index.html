@@ -306,6 +306,30 @@
         text-align: center;
       }
 
+      .status-Enviado {
+        background: #eef2f7;
+        border-color: #dfe7f1;
+        color: #475569;
+      }
+
+      .status-En-proceso {
+        background: #fff7ed;
+        border-color: #fcd9a7;
+        color: #b45309;
+      }
+
+      .status-Rechazado {
+        background: #fee2e2;
+        border-color: #fecaca;
+        color: #b91c1c;
+      }
+
+      .status-Oferta {
+        background: #dcfce7;
+        border-color: #bbf7d0;
+        color: #15803d;
+      }
+
       .meta-row {
         display: flex;
         flex-wrap: wrap;
@@ -888,6 +912,10 @@
         return VALID_ESTADOS.includes(value) ? value : "Enviado";
       }
 
+      function getStatusClassName(estado) {
+        return `status-${String(estado).replace(/\s+/g, "-")}`;
+      }
+
       function normalizeLink(value) {
         if (typeof value !== "string") return "";
         const trimmed = value.trim();
@@ -1108,6 +1136,28 @@
               option.selected = true;
             }
             statusSelect.appendChild(option);
+          });
+
+          statusSelect.classList.add(getStatusClassName(postulacion.estado));
+
+          statusSelect.addEventListener("change", (event) => {
+            const nextEstado = normalizeEstado(event.target.value);
+            postulaciones = postulaciones.map((item) => {
+              if (item.id !== postulacion.id) {
+                return item;
+              }
+              return { ...item, estado: nextEstado };
+            });
+
+            savePostulaciones();
+            updateMetrics();
+            event.target.classList.remove(
+              "status-Enviado",
+              "status-En-proceso",
+              "status-Rechazado",
+              "status-Oferta"
+            );
+            event.target.classList.add(getStatusClassName(nextEstado));
           });
 
           top.append(textGroup, statusSelect);
