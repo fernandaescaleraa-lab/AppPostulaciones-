@@ -284,15 +284,20 @@
         margin: 0 0 12px;
       }
 
-      .card-links {
+      .card-links,
+      .card-gallery {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 12px;
+      }
+
+      .card-gallery {
+        margin: 0 0 12px;
       }
 
       .link-button,
-      .link-text {
+      .link-text,
+      .image-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -317,6 +322,22 @@
       .link-text {
         background: #f3f4f6;
         color: var(--muted);
+      }
+
+      .image-link {
+        overflow: hidden;
+        padding: 0;
+        border: 1px solid var(--border);
+        background: #fff;
+        width: 110px;
+        height: 90px;
+      }
+
+      .screenshot-thumb {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
       .card-actions {
@@ -554,6 +575,11 @@
               </div>
 
               <div class="field-group">
+                <label for="screenshot-upload">Agregar captura / imagen</label>
+                <input id="screenshot-upload" name="screenshot-upload" type="file" accept="image/*" multiple />
+              </div>
+
+              <div class="field-group">
                 <label for="estado">Estado</label>
                 <select id="estado" name="estado" required>
                   <option value="">Seleccionar</option>
@@ -601,6 +627,7 @@
       const linkInput = document.getElementById("link-postulacion");
       const cvInput = document.getElementById("cv-utilizado");
       const cvFileInput = document.getElementById("cv-file");
+      const screenshotInput = document.getElementById("screenshot-upload");
       const estadoInput = document.getElementById("estado");
       const notasInput = document.getElementById("notas");
       const listElement = document.getElementById("applications-list");
@@ -610,6 +637,7 @@
 
       let postulaciones = loadPostulaciones();
       let editingId = null;
+      let existingScreenshots = [];
 
       function normalizeEstado(value) {
         return VALID_ESTADOS.includes(value) ? value : "Enviado";
@@ -654,6 +682,9 @@
         const cvUtilizado = typeof item.cvUtilizado === "string" ? item.cvUtilizado.trim() : "";
         const cvFileData = typeof item.cvFileData === "string" ? item.cvFileData : "";
         const cvFileName = typeof item.cvFileName === "string" ? item.cvFileName.trim() : "";
+        const screenshots = Array.isArray(item.screenshots)
+          ? item.screenshots.filter((url) => typeof url === "string" && url)
+          : [];
 
         if (!empresa || !rol || !fecha) {
           return null;
@@ -674,6 +705,7 @@
           cvUtilizado,
           cvFileData,
           cvFileName,
+          screenshots,
           notas
         };
       }
@@ -836,13 +868,33 @@
             }
           }
 
+          const gallery = document.createElement("div");
+          gallery.className = "card-gallery";
+          if (Array.isArray(postulacion.screenshots) && postulacion.screenshots.length > 0) {
+            postulacion.screenshots.forEach((src) => {
+              const imageLink = document.createElement("a");
+              imageLink.href = src;
+              imageLink.target = "_blank";
+              imageLink.rel = "noopener noreferrer";
+              imageLink.className = "image-link";
+
+              const image = document.createElement("img");
+              image.src = src;
+              image.alt = "Captura de la postulación";
+              image.className = "screenshot-thumb";
+
+              imageLink.appendChild(image);
+              gallery.appendChild(imageLink);
+            });
+          }
+
           if (postulacion.notas) {
             const notes = document.createElement("p");
             notes.className = "notes";
             notes.textContent = postulacion.notas;
-            item.append(top, meta, linksWrap, notes);
+            item.append(top, meta, linksWrap, gallery, notes);
           } else {
-            item.append(top, meta, linksWrap);
+            item.append(top, meta, linksWrap, gallery);
           }
 
           const actions = document.createElement("div");
@@ -881,11 +933,15 @@
         cvFileInput.value = "";
         estadoInput.value = postulacion.estado || "";
         notasInput.value = postulacion.notas || "";
+        screenshotInput.value = "";
+        existingScreenshots = Array.isArray(postulacion.screenshots) ? [...postulacion.screenshots] : [];
       }
 
       function resetForm() {
         form.reset();
         cvFileInput.value = "";
+        screenshotInput.value = "";
+        existingScreenshots = [];
         editingId = null;
         formTitle.textContent = "Nueva postulación";
         submitButton.textContent = "Guardar";
@@ -940,6 +996,12 @@
           }
         }
 
+        let screenshots = [...existingScreenshots];
+        if (screenshotInput.files && screenshotInput.files.length > 0) {
+          const files = Array.from(screenshotInput.files);
+          screenshots = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+        }
+
         const newPostulacion = {
           id: editingId || `post-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           empresa,
@@ -949,6 +1011,7 @@
           cvUtilizado,
           cvFileData,
           cvFileName,
+          screenshots,
           estado: normalizeEstado(estado),
           notas
         };
