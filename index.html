@@ -220,37 +220,6 @@
         font-size: 0.95rem;
       }
 
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-
-      .status-badge[data-status="Enviado"] {
-        background: var(--blue-soft);
-        color: var(--blue-text);
-      }
-
-      .status-badge[data-status="En proceso"] {
-        background: var(--pink-soft);
-        color: var(--pink-text);
-      }
-
-      .status-badge[data-status="Oferta"] {
-        background: var(--green-soft);
-        color: var(--green-text);
-      }
-
-      .status-badge[data-status="Rechazado"] {
-        background: var(--gray-soft);
-        color: var(--gray-text);
-      }
-
       .status-select {
         border: 1px solid var(--border);
         border-radius: 999px;
@@ -295,9 +264,25 @@
         margin: 0 0 12px;
       }
 
+      .card-block {
+        margin: 0 0 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--panel-soft);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+
+      .card-block strong {
+        color: var(--text);
+      }
+
       .link-button,
       .link-text,
-      .image-link {
+      .image-link,
+      .contact-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -309,13 +294,15 @@
         text-decoration: none;
       }
 
-      .link-button {
+      .link-button,
+      .contact-link {
         border: 1px solid rgba(244, 114, 182, 0.3);
         background: var(--primary-soft);
         color: var(--primary-dark);
       }
 
-      .link-button:hover {
+      .link-button:hover,
+      .contact-link:hover {
         background: #fce7f3;
       }
 
@@ -580,6 +567,27 @@
               </div>
 
               <div class="field-group">
+                <label for="recruiter-nombre">Nombre del Recruiter / Contacto</label>
+                <input id="recruiter-nombre" name="recruiter-nombre" type="text" maxlength="120" placeholder="Ej: Paula García" />
+              </div>
+
+              <div class="field-group">
+                <label for="recruiter-medio">Medio de contacto</label>
+                <select id="recruiter-medio" name="recruiter-medio">
+                  <option value="">Seleccionar</option>
+                  <option value="LinkedIn">LinkedIn</option>
+                  <option value="Email">Email</option>
+                  <option value="Portal Web">Portal Web</option>
+                  <option value="Referido">Referido</option>
+                </select>
+              </div>
+
+              <div class="field-group">
+                <label for="recruiter-link">Link de contacto o perfil</label>
+                <input id="recruiter-link" name="recruiter-link" type="url" placeholder="https://..." />
+              </div>
+
+              <div class="field-group">
                 <label for="estado">Estado</label>
                 <select id="estado" name="estado" required>
                   <option value="">Seleccionar</option>
@@ -628,6 +636,9 @@
       const cvInput = document.getElementById("cv-utilizado");
       const cvFileInput = document.getElementById("cv-file");
       const screenshotInput = document.getElementById("screenshot-upload");
+      const recruiterNombreInput = document.getElementById("recruiter-nombre");
+      const recruiterMedioInput = document.getElementById("recruiter-medio");
+      const recruiterLinkInput = document.getElementById("recruiter-link");
       const estadoInput = document.getElementById("estado");
       const notasInput = document.getElementById("notas");
       const listElement = document.getElementById("applications-list");
@@ -685,6 +696,9 @@
         const screenshots = Array.isArray(item.screenshots)
           ? item.screenshots.filter((url) => typeof url === "string" && url)
           : [];
+        const recruiterNombre = typeof item.recruiterNombre === "string" ? item.recruiterNombre.trim() : "";
+        const recruiterMedio = typeof item.recruiterMedio === "string" ? item.recruiterMedio : "";
+        const recruiterLink = normalizeLink(item.recruiterLink);
 
         if (!empresa || !rol || !fecha) {
           return null;
@@ -706,6 +720,9 @@
           cvFileData,
           cvFileName,
           screenshots,
+          recruiterNombre,
+          recruiterMedio,
+          recruiterLink,
           notas
         };
       }
@@ -846,6 +863,32 @@
 
           meta.append(metaLabel, metaValue);
 
+          const contactBlock = document.createElement("div");
+          contactBlock.className = "card-block";
+          const hasContact = Boolean(
+            postulacion.recruiterNombre || postulacion.recruiterMedio || postulacion.recruiterLink
+          );
+
+          if (hasContact) {
+            const contactText = document.createElement("span");
+            const recruiterName = postulacion.recruiterNombre ? postulacion.recruiterNombre : "Contacto";
+            const recruiterMedium = postulacion.recruiterMedio ? ` (${postulacion.recruiterMedio})` : "";
+            contactText.textContent = `👤 Contacto: ${recruiterName}${recruiterMedium}`;
+            contactBlock.appendChild(contactText);
+
+            if (postulacion.recruiterLink) {
+              const contactLink = document.createElement("a");
+              contactLink.className = "contact-link";
+              contactLink.href = postulacion.recruiterLink;
+              contactLink.target = "_blank";
+              contactLink.rel = "noopener noreferrer";
+              contactLink.textContent = "Abrir contacto";
+              contactLink.style.marginTop = "8px";
+              contactLink.style.display = "inline-flex";
+              contactBlock.appendChild(contactLink);
+            }
+          }
+
           const linksWrap = document.createElement("div");
           linksWrap.className = "card-links";
 
@@ -892,9 +935,17 @@
             const notes = document.createElement("p");
             notes.className = "notes";
             notes.textContent = postulacion.notas;
-            item.append(top, meta, linksWrap, gallery, notes);
+            if (hasContact) {
+              item.append(top, meta, contactBlock, linksWrap, gallery, notes);
+            } else {
+              item.append(top, meta, linksWrap, gallery, notes);
+            }
           } else {
-            item.append(top, meta, linksWrap, gallery);
+            if (hasContact) {
+              item.append(top, meta, contactBlock, linksWrap, gallery);
+            } else {
+              item.append(top, meta, linksWrap, gallery);
+            }
           }
 
           const actions = document.createElement("div");
@@ -931,6 +982,9 @@
         linkInput.value = postulacion.linkVacante || "";
         cvInput.value = postulacion.cvUtilizado || "";
         cvFileInput.value = "";
+        recruiterNombreInput.value = postulacion.recruiterNombre || "";
+        recruiterMedioInput.value = postulacion.recruiterMedio || "";
+        recruiterLinkInput.value = postulacion.recruiterLink || "";
         estadoInput.value = postulacion.estado || "";
         notasInput.value = postulacion.notas || "";
         screenshotInput.value = "";
@@ -975,6 +1029,9 @@
         const rol = rolInput.value.trim();
         const fecha = fechaInput.value;
         const linkVacante = normalizeLink(linkInput.value);
+        const recruiterNombre = recruiterNombreInput.value.trim();
+        const recruiterMedio = recruiterMedioInput.value;
+        const recruiterLink = normalizeLink(recruiterLinkInput.value);
         const estado = estadoInput.value;
         const notas = notasInput.value.trim();
 
@@ -1012,6 +1069,9 @@
           cvFileData,
           cvFileName,
           screenshots,
+          recruiterNombre,
+          recruiterMedio,
+          recruiterLink,
           estado: normalizeEstado(estado),
           notas
         };
